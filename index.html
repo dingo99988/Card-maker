@@ -1,8 +1,699 @@
 <!doctype html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="font-family:sans-serif;padding:24px">
-  <h1>Card Maker 上線成功 ✅</h1>
-  <p>接下來把你的卡片產生器 HTML/JS 換上來就好。</p>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Card Maker（TCG風）</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#0b0e14;
+      --panel:#121828;
+      --muted:#91a0b8;
+      --text:#eaf0ff;
+      --line:rgba(255,255,255,.08);
+      --btn:#2a64ff;
+      --btn2:#27324a;
+      --good:#2bd576;
+      --warn:#ffcc66;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:"Noto Sans TC", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+      background:linear-gradient(180deg,#070a10,#0b0e14);
+      color:var(--text);
+    }
+    .topbar{
+      max-width:1160px;margin:0 auto;padding:18px 18px 0 18px;
+      display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;
+    }
+    h1{margin:0;font-size:18px;letter-spacing:.5px}
+    .sub{margin:6px 0 0 0;font-size:12px;color:var(--muted);line-height:1.5}
+    .badge{
+      font-size:12px;color:#cfe0ff;background:rgba(42,100,255,.18);
+      border:1px solid rgba(42,100,255,.35);
+      padding:6px 10px;border-radius:999px;
+      user-select:none;
+    }
+    .wrap{
+      max-width:1160px;
+      margin:0 auto;
+      padding:18px;
+      display:grid;
+      grid-template-columns: 420px 1fr;
+      gap:16px;
+    }
+    @media (max-width: 980px){
+      .wrap{grid-template-columns:1fr; }
+    }
+    .card{
+      background:rgba(18,24,40,.88);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+      box-shadow:0 12px 30px rgba(0,0,0,.35);
+      backdrop-filter: blur(8px);
+    }
+    .sectionTitle{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      margin:0 0 10px 0;
+    }
+    .status{
+      font-size:12px;color:rgba(255,255,255,.75);
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.18);
+      padding:6px 10px;border-radius:999px;
+    }
+    .status.ok{border-color:rgba(43,213,118,.35); color:#c9ffe2; background:rgba(43,213,118,.12)}
+    .status.warn{border-color:rgba(255,204,102,.35); color:#fff2cc; background:rgba(255,204,102,.10)}
+    .row{display:grid;grid-template-columns: 1fr 1fr; gap:10px;}
+    label{display:block;font-size:12px;color:var(--muted);margin:10px 0 6px}
+    input, select, textarea{
+      width:100%;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.22);
+      color:var(--text);
+      padding:10px 10px;
+      outline:none;
+    }
+    textarea{min-height:110px; resize:vertical; line-height:1.4;}
+    input[type="file"]{padding:8px}
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    button{
+      border:none;
+      border-radius:12px;
+      padding:10px 12px;
+      cursor:pointer;
+      color:white;
+      background:var(--btn);
+      font-weight:800;
+    }
+    button.secondary{background:var(--btn2)}
+    button:active{transform:translateY(1px)}
+    .hint{
+      font-size:12px;color:var(--muted);
+      margin-top:10px;line-height:1.55
+    }
+    .previewWrap{display:flex;justify-content:center;align-items:flex-start}
+    canvas{
+      width:min(560px, 100%);
+      height:auto;
+      border-radius:18px;
+      border:1px solid var(--line);
+      background:#0a0a0a;
+      box-shadow:0 16px 40px rgba(0,0,0,.5);
+    }
+    .tiny{
+      margin-top:8px;
+      font-size:12px;color:rgba(255,255,255,.55);
+      display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;
+    }
+    .linklike{
+      color:#bcd2ff; text-decoration:underline; cursor:pointer; user-select:none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div>
+      <h1>Card Maker（TCG風）</h1>
+      <div class="sub">上傳卡圖、輸入資訊，即時生成並下載 PNG。<br>（非官方模板；請避免使用官方 Logo/掃描框素材，避免侵權）</div>
+    </div>
+    <div class="badge">✅ GitHub Pages 版本</div>
+  </div>
+
+  <div class="wrap">
+    <div class="card">
+      <div class="sectionTitle">
+        <h1 style="margin:0;font-size:16px">卡片設定</h1>
+        <div id="saveStatus" class="status">草稿未變更</div>
+      </div>
+
+      <label>卡圖（Artwork）</label>
+      <input id="art" type="file" accept="image/*">
+
+      <label>卡名</label>
+      <input id="name" placeholder="例如：黑暗工程師">
+
+      <div class="row">
+        <div>
+          <label>卡種</label>
+          <select id="kind">
+            <option value="monster">怪獸</option>
+            <option value="spell">魔法</option>
+            <option value="trap">陷阱</option>
+          </select>
+        </div>
+        <div>
+          <label>屬性</label>
+          <select id="attr">
+            <option value="dark">闇</option>
+            <option value="light">光</option>
+            <option value="fire">炎</option>
+            <option value="water">水</option>
+            <option value="earth">地</option>
+            <option value="wind">風</option>
+            <option value="divine">神</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>等級（星數）</label>
+          <input id="level" type="number" min="0" max="12" value="4">
+        </div>
+        <div>
+          <label>稀有度（顯示用）</label>
+          <select id="rarity">
+            <option value="none">無</option>
+            <option value="rare">R</option>
+            <option value="super">SR</option>
+            <option value="ultra">UR</option>
+          </select>
+        </div>
+      </div>
+
+      <label>種類行（例如：機械族／效果）</label>
+      <input id="typeLine" placeholder="例如：機械族／效果">
+
+      <label>效果文字</label>
+      <textarea id="desc" placeholder="在這裡輸入卡片效果..."></textarea>
+
+      <div class="row">
+        <div>
+          <label>ATK</label>
+          <input id="atk" placeholder="例如：1800" inputmode="numeric">
+        </div>
+        <div>
+          <label>DEF</label>
+          <input id="def" placeholder="例如：1200" inputmode="numeric">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>解析度</label>
+          <select id="scale">
+            <option value="1">標準</option>
+            <option value="2" selected>高解析（推薦）</option>
+            <option value="3">超高（較吃效能）</option>
+          </select>
+        </div>
+        <div>
+          <label>背景風格</label>
+          <select id="bgStyle">
+            <option value="clean" selected>乾淨</option>
+            <option value="noise">微噪點</option>
+            <option value="dream">夢核霧感</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="btns">
+        <button id="renderBtn">重新生成</button>
+        <button id="downloadBtn" class="secondary">下載 PNG</button>
+        <button id="clearBtn" class="secondary" title="清空欄位與草稿">清空</button>
+      </div>
+
+      <div class="tiny">
+        <span>自動存草稿：<b>開</b></span>
+        <span class="linklike" id="exportBtn">匯出設定 JSON</span>
+        <span class="linklike" id="importBtn">匯入設定 JSON</span>
+      </div>
+
+      <div class="hint">
+        • 若你想做「更像遊戲王」的框：可以改配色、星星位置、字體大小、加自訂框 PNG 疊圖。<br>
+        • 建議使用自己畫的框/素材，不要用官方 Logo/掃描框。
+      </div>
+    </div>
+
+    <div class="card previewWrap">
+      <canvas id="cv"></canvas>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+
+  const cv = $('cv');
+  const ctx = cv.getContext('2d');
+
+  const BASE_W = 750;
+  const BASE_H = 1090;
+
+  const DRAFT_KEY = 'cardmaker_draft_v1';
+  const saveStatus = $('saveStatus');
+
+  let artImg = null;
+  let artDataUrl = null; // 用於草稿存圖（base64）
+  let dirty = false;
+  let saveTimer = null;
+
+  const palette = {
+    monster: { frame1:'#7a4b1a', frame2:'#c48a3b', plate:'#efe5d0' },
+    spell:   { frame1:'#0f6b5e', frame2:'#3bbfa7', plate:'#d7efe9' },
+    trap:    { frame1:'#6a1a62', frame2:'#c23bb6', plate:'#f0d7ee' },
+  };
+
+  const attrColor = {
+    dark:'#7a4cff', light:'#ffe38a', fire:'#ff6b4c', water:'#4cb9ff',
+    earth:'#caa14a', wind:'#71ffb3', divine:'#ffd400'
+  };
+
+  function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+
+  function roundRect(x,y,w,h,r){
+    r = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+
+  function drawStar(cx, cy, spikes, outerR, innerR){
+    let rot = Math.PI / 2 * 3;
+    let x = cx;
+    let y = cy;
+    const step = Math.PI / spikes;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - outerR);
+    for (let i=0; i<spikes; i++){
+      x = cx + Math.cos(rot) * outerR;
+      y = cy + Math.sin(rot) * outerR;
+      ctx.lineTo(x, y);
+      rot += step;
+
+      x = cx + Math.cos(rot) * innerR;
+      y = cy + Math.sin(rot) * innerR;
+      ctx.lineTo(x, y);
+      rot += step;
+    }
+    ctx.lineTo(cx, cy - outerR);
+    ctx.closePath();
+  }
+
+  function fitImage(img, x, y, w, h){
+    const iw = img.naturalWidth || img.width;
+    const ih = img.naturalHeight || img.height;
+    const ir = iw/ih, r = w/h;
+
+    let dw=w, dh=h, dx=x, dy=y;
+    if (ir > r) {
+      dh = h;
+      dw = h * ir;
+      dx = x - (dw - w)/2;
+    } else {
+      dw = w;
+      dh = w / ir;
+      dy = y - (dh - h)/2;
+    }
+    ctx.drawImage(img, dx, dy, dw, dh);
+  }
+
+  function addBackground(style){
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(0,0,cv.width,cv.height);
+
+    if (style === 'noise'){
+      const imgData = ctx.getImageData(0,0,cv.width,cv.height);
+      const d = imgData.data;
+      for(let i=0;i<d.length;i+=4){
+        const n = (Math.random()*18)|0;
+        d[i]+=n; d[i+1]+=n; d[i+2]+=n;
+      }
+      ctx.putImageData(imgData,0,0);
+    }
+
+    if (style === 'dream'){
+      ctx.globalAlpha = 0.12;
+      for(let i=0;i<14;i++){
+        ctx.beginPath();
+        const r = (Math.random()*cv.width*0.5) + 80;
+        ctx.arc(Math.random()*cv.width, Math.random()*cv.height, r, 0, Math.PI*2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function render(){
+    const scale = Number($('scale').value || 2);
+    cv.width = BASE_W * scale;
+    cv.height = BASE_H * scale;
+    ctx.setTransform(scale,0,0,scale,0,0);
+
+    const name = ($('name').value || '未命名卡片').trim();
+    const kind = $('kind').value;
+    const attr = $('attr').value;
+    const level = clamp(parseInt($('level').value || '0',10), 0, 12);
+    const rarity = $('rarity').value;
+    const typeLine = ($('typeLine').value || '').trim();
+    const desc = ($('desc').value || '').trim();
+    const atk = ($('atk').value || '').trim();
+    const def = ($('def').value || '').trim();
+    const bgStyle = $('bgStyle').value;
+
+    const p = palette[kind] || palette.monster;
+
+    addBackground(bgStyle);
+
+    const pad = 26;
+    const cardX = pad, cardY = pad, cardW = BASE_W - pad*2, cardH = BASE_H - pad*2;
+
+    const grd = ctx.createLinearGradient(cardX, cardY, cardX, cardY + cardH);
+    grd.addColorStop(0, p.frame2);
+    grd.addColorStop(1, p.frame1);
+    ctx.fillStyle = grd;
+    roundRect(cardX, cardY, cardW, cardH, 24);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(0,0,0,.22)';
+    roundRect(cardX+10, cardY+10, cardW-20, cardH-20, 18);
+    ctx.fill();
+
+    const nameH = 72;
+    ctx.fillStyle = 'rgba(255,255,255,.12)';
+    roundRect(cardX+16, cardY+16, cardW-32, nameH, 14);
+    ctx.fill();
+
+    const attrR = 18;
+    const ax = cardX + cardW - 16 - attrR;
+    const ay = cardY + 16 + nameH/2;
+    ctx.beginPath();
+    ctx.arc(ax, ay, attrR, 0, Math.PI*2);
+    ctx.fillStyle = attrColor[attr] || '#ffffff';
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(0,0,0,.35)';
+    ctx.stroke();
+
+    if (rarity !== 'none'){
+      ctx.font = '800 16px "Noto Sans TC"';
+      ctx.fillStyle = 'rgba(0,0,0,.55)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(rarity.toUpperCase(), ax, ay);
+    }
+
+    ctx.font = '800 30px "Noto Sans TC"';
+    ctx.fillStyle = '#0b0e14';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(name, cardX+28, cardY+16+nameH/2);
+
+    if (kind === 'monster' && level > 0){
+      const startX = cardX + cardW - 22 - (level * 26);
+      const y = cardY + 16 + nameH + 18;
+      for (let i=0;i<level;i++){
+        drawStar(startX + i*26, y, 5, 10, 4.5);
+        ctx.fillStyle = '#ffd36a';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(0,0,0,.35)';
+        ctx.stroke();
+      }
+    }
+
+    const artX = cardX+22, artY = cardY+16+nameH+36;
+    const artW = cardW-44, artH = 430;
+    ctx.fillStyle = 'rgba(255,255,255,.06)';
+    roundRect(artX, artY, artW, artH, 16);
+    ctx.fill();
+
+    if (artImg){
+      ctx.save();
+      roundRect(artX+6, artY+6, artW-12, artH-12, 14);
+      ctx.clip();
+      fitImage(artImg, artX+6, artY+6, artW-12, artH-12);
+      ctx.restore();
+    } else {
+      ctx.font = '600 16px "Noto Sans TC"';
+      ctx.fillStyle = 'rgba(255,255,255,.55)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('請上傳卡圖', artX + artW/2, artY + artH/2);
+    }
+
+    const typeY = artY + artH + 22;
+    ctx.fillStyle = p.plate;
+    roundRect(artX, typeY, artW, 56, 14);
+    ctx.fill();
+    ctx.font = '700 18px "Noto Sans TC"';
+    ctx.fillStyle = '#0b0e14';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    const typeText =
+      kind === 'monster' ? (typeLine || '族／效果') :
+      kind === 'spell' ? (typeLine || '魔法卡') :
+      (typeLine || '陷阱卡');
+    ctx.fillText(typeText, artX + 14, typeY + 28);
+
+    const effY = typeY + 66;
+    const effH = 260;
+    ctx.fillStyle = 'rgba(255,255,255,.10)';
+    roundRect(artX, effY, artW, effH, 14);
+    ctx.fill();
+
+    ctx.font = '400 18px "Noto Sans TC"';
+    ctx.fillStyle = 'rgba(255,255,255,.92)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+
+    const text = desc || '（在左側輸入效果文字）';
+    const maxWidth = artW - 24;
+    const lines = [];
+    let line = '';
+    for (const ch of text){
+      const test = line + ch;
+      if (ctx.measureText(test).width > maxWidth && line){
+        lines.push(line);
+        line = ch;
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+
+    let ty = effY + 14;
+    const lineH = 24;
+    for (let i=0; i<lines.length; i++){
+      if (ty + lineH > effY + effH - 14) break;
+      ctx.fillText(lines[i], artX + 12, ty);
+      ty += lineH;
+    }
+
+    const statY = effY + effH + 16;
+    ctx.fillStyle = 'rgba(0,0,0,.25)';
+    roundRect(artX, statY, artW, 64, 14);
+    ctx.fill();
+
+    ctx.font = '800 20px "Noto Sans TC"';
+    ctx.fillStyle = 'rgba(255,255,255,.92)';
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillText('ATK', artX + 14, statY + 32);
+    ctx.fillText('DEF', artX + artW/2 + 14, statY + 32);
+
+    ctx.font = '800 22px "Noto Sans TC"';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'right';
+    ctx.fillText(atk || '—', artX + artW/2 - 14, statY + 32);
+    ctx.fillText(def || '—', artX + artW - 14, statY + 32);
+
+    ctx.font = '600 12px "Noto Sans TC"';
+    ctx.fillStyle = 'rgba(255,255,255,.40)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('Custom TCG-style card (not official).', cardX+18, cardY+cardH-12);
+  }
+
+  function downloadPng(){
+    const a = document.createElement('a');
+    const safeName = ($('name').value || 'my_card').replace(/[\\\/:*?"<>|]/g,'_');
+    a.download = safeName + '.png';
+    a.href = cv.toDataURL('image/png');
+    a.click();
+  }
+
+  function getDraft(){
+    return {
+      name: $('name').value || '',
+      kind: $('kind').value || 'monster',
+      attr: $('attr').value || 'dark',
+      level: $('level').value || '4',
+      rarity: $('rarity').value || 'none',
+      typeLine: $('typeLine').value || '',
+      desc: $('desc').value || '',
+      atk: $('atk').value || '',
+      def: $('def').value || '',
+      scale: $('scale').value || '2',
+      bgStyle: $('bgStyle').value || 'clean',
+      artDataUrl: artDataUrl || null
+    };
+  }
+
+  function applyDraft(d){
+    $('name').value = d.name ?? '';
+    $('kind').value = d.kind ?? 'monster';
+    $('attr').value = d.attr ?? 'dark';
+    $('level').value = d.level ?? '4';
+    $('rarity').value = d.rarity ?? 'none';
+    $('typeLine').value = d.typeLine ?? '';
+    $('desc').value = d.desc ?? '';
+    $('atk').value = d.atk ?? '';
+    $('def').value = d.def ?? '';
+    $('scale').value = d.scale ?? '2';
+    $('bgStyle').value = d.bgStyle ?? 'clean';
+
+    artDataUrl = d.artDataUrl || null;
+    if (artDataUrl){
+      const img = new Image();
+      img.onload = () => { artImg = img; render(); };
+      img.src = artDataUrl;
+    } else {
+      artImg = null;
+      render();
+    }
+  }
+
+  function setStatus(text, type){
+    saveStatus.textContent = text;
+    saveStatus.classList.remove('ok','warn');
+    if (type) saveStatus.classList.add(type);
+  }
+
+  function markDirty(){
+    dirty = true;
+    setStatus('草稿未儲存', 'warn');
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      try{
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(getDraft()));
+        dirty = false;
+        setStatus('草稿已自動儲存', 'ok');
+      }catch(e){
+        setStatus('草稿儲存失敗（可能圖片太大）', 'warn');
+      }
+    }, 450);
+  }
+
+  function loadDraft(){
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) { render(); return; }
+    try{
+      const d = JSON.parse(raw);
+      applyDraft(d);
+      setStatus('已載入上次草稿', 'ok');
+    }catch(e){
+      render();
+    }
+  }
+
+  function clearAll(){
+    $('name').value = '';
+    $('kind').value = 'monster';
+    $('attr').value = 'dark';
+    $('level').value = '4';
+    $('rarity').value = 'none';
+    $('typeLine').value = '';
+    $('desc').value = '';
+    $('atk').value = '';
+    $('def').value = '';
+    $('scale').value = '2';
+    $('bgStyle').value = 'clean';
+    $('art').value = '';
+    artImg = null;
+    artDataUrl = null;
+    localStorage.removeItem(DRAFT_KEY);
+    setStatus('已清空（草稿刪除）', 'ok');
+    render();
+  }
+
+  function exportJSON(){
+    const data = JSON.stringify(getDraft(), null, 2);
+    const blob = new Blob([data], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cardmaker_draft.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function importJSON(){
+    const pick = document.createElement('input');
+    pick.type = 'file';
+    pick.accept = 'application/json';
+    pick.onchange = async () => {
+      const f = pick.files && pick.files[0];
+      if (!f) return;
+      const txt = await f.text();
+      try{
+        const d = JSON.parse(txt);
+        applyDraft(d);
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(getDraft()));
+        setStatus('已匯入並儲存草稿', 'ok');
+      }catch(e){
+        alert('匯入失敗：JSON 格式不正確');
+      }
+    };
+    pick.click();
+  }
+
+  // 事件綁定
+  const fields = ['name','kind','attr','level','rarity','typeLine','desc','atk','def','scale','bgStyle'];
+  for (const id of fields){
+    $(id).addEventListener('input', () => { render(); markDirty(); });
+    $(id).addEventListener('change', () => { render(); markDirty(); });
+  }
+
+  $('art').addEventListener('change', (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) { artImg = null; artDataUrl = null; render(); markDirty(); return; }
+
+    // 圖片太大會讓 localStorage 失敗，這裡做個簡單限制（約 2.5MB）
+    if (f.size > 2.5 * 1024 * 1024){
+      alert('圖片有點大（> 2.5MB），可以先壓縮再上傳，草稿才存得下。\n（仍可正常生成/下載 PNG）');
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      artDataUrl = reader.result;
+      const img = new Image();
+      img.onload = () => { artImg = img; render(); markDirty(); };
+      img.src = artDataUrl;
+    };
+    reader.readAsDataURL(f);
+  });
+
+  $('renderBtn').addEventListener('click', () => { render(); });
+  $('downloadBtn').addEventListener('click', downloadPng);
+  $('clearBtn').addEventListener('click', () => {
+    if (confirm('確定要清空嗎？（包含草稿）')) clearAll();
+  });
+
+  $('exportBtn').addEventListener('click', exportJSON);
+  $('importBtn').addEventListener('click', importJSON);
+
+  // 初始化
+  setStatus('草稿未變更', null);
+  loadDraft();
+})();
+</script>
 </body>
 </html>
